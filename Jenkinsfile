@@ -16,24 +16,8 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t demo-app .'
+                sh "docker build -t demo-app:${env.BRANCH_NAME} ."
             }
-        }
-
-        stage('Run Container') {
-            steps {
-                sh '''
-                docker stop demo-container || true
-                docker rm demo-container || true
-                docker run -d -p 8081:8080 --name demo-container demo-app
-                '''
-            }
-        }
-    }
-
-    post {
-        always {
-            echo 'Pipeline completed 🚀'
         }
     }
 }
