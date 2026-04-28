@@ -13,11 +13,5 @@ pipeline {
                 sh 'mvn -B clean package'
             }
         }
-
-        stage('Build Docker Image') {
-            steps {
-                sh "docker build -t demo-app:${env.BRANCH_NAME} ."
-            }
-        }
     }
 }
