@@ -12,11 +12,6 @@ pipeline {
             steps {
                 sh 'mvn -B clean package'
             }
-            stage('Debug') {
-    steps {
-        sh 'echo "NEW JENKINSFILE WITHOUT DOCKER HUB"'
-    }
-}
         }
     }
 }
