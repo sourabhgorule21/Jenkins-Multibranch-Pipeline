@@ -25,7 +25,10 @@ pipeline {
                 }
             }
             steps {
-                sh './mvnw -B clean verify'
+                sh '''
+                chmod +x mvnw
+                ./mvnw -B clean verify
+                '''
             }
             post {
                 always {
