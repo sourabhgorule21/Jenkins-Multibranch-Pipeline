@@ -1,33 +1,62 @@
 pipeline {
     agent any
 
-    stages {
+    options {
+        timestamps()
+    }
 
-        stage('Build Maven') {
+    environment {
+        APP_NAME = 'demo-app'
+        APP_IMAGE = "${APP_NAME}:latest"
+    }
+
+    stages {
+        stage('Checkout') {
             steps {
-                sh 'mvn -B clean package'
+                checkout scm
+            }
+        }
+
+        stage('Build And Test') {
+            agent {
+                docker {
+                    image 'maven:3.9.9-eclipse-temurin-21'
+                    args '-v maven-repo:/root/.m2'
+                }
+            }
+            steps {
+                sh './mvnw -B clean verify'
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'ls -la target'   // debug (optional)
-                sh 'docker build -t demo-app:latest .'
+                sh 'docker build -t ${APP_IMAGE} .'
             }
         }
 
-        stage('Deploy Docker Container') {
+        stage('Deploy') {
             steps {
                 sh '''
-                docker stop demo-app || true
-                docker rm demo-app || true
-
-                docker run -d \
-                  --name demo-app \
-                  -p 9090:9090 \
-                  demo-app:latest
+                export APP_IMAGE=${APP_IMAGE}
+                docker compose down --remove-orphans || true
+                docker compose up -d
                 '''
             }
+        }
+    }
+
+    post {
+        success {
+            echo 'CI/CD pipeline completed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
