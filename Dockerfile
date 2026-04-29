@@ -1,18 +1,9 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS builder
+FROM jenkins/jenkins:lts
 
-WORKDIR /workspace
+USER root
 
-COPY pom.xml ./
-COPY src ./src
+RUN apt-get update && \
+    apt-get install -y docker.io docker-compose-plugin && \
+    apt-get clean
 
-RUN mvn -B clean package -DskipTests
-
-FROM eclipse-temurin:21-jre
-
-WORKDIR /app
-
-COPY --from=builder /workspace/target/*.jar app.jar
-
-EXPOSE 9090
-
-ENTRYPOINT ["java", "-jar", "app.jar", "--server.port=9090"]
+USER root
