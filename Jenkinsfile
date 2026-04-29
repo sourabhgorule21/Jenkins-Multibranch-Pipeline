@@ -1,34 +1,51 @@
 pipeline {
     agent any
 
+    environment {
+        APP_NAME = 'demo-app'
+        APP_IMAGE = 'demo-app:latest'
+        APP_PORT = '9090'
+        DB_HOST = 'mysql-db'
+    }
+
     stages {
-        stage('Build Docker Image') {
+        stage('Checkout') {
             steps {
-                sh 'docker build -t demo-app:latest .'
+                checkout scm
             }
         }
 
-        stage('Deploy Docker Container') {
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t ${APP_IMAGE} .'
+            }
+        }
+
+        stage('Remove Old Container') {
+            steps {
+                sh 'docker rm -f ${APP_NAME} || true'
+            }
+        }
+
+        stage('Run New Container') {
             steps {
                 sh '''
-                docker stop demo-app || true
-                docker rm demo-app || true
-
                 docker run -d \
-                  --name demo-app \
-                  -p 9090:9090 \
-                  demo-app:latest
+                  --name ${APP_NAME} \
+                  --restart unless-stopped \
+                  -p ${APP_PORT}:9090 \
+                  -e DB_HOST=${DB_HOST} \
+                  -e DB_USERNAME=${DB_USERNAME} \
+                  -e DB_PASSWORD=${DB_PASSWORD} \
+                  ${APP_IMAGE}
                 '''
             }
         }
-    }
 
-    post {
-        success {
-            echo 'Docker deployment successful ✅'
-        }
-        failure {
-            echo 'Pipeline failed ❌'
+        stage('Verify Deployment') {
+            steps {
+                sh 'docker ps --filter "name=${APP_NAME}"'
+            }
         }
     }
 }
